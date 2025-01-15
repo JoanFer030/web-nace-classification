@@ -1,1 +1,15 @@
-.venv
+# Virtual enviroment
+.venv/
+
+# Data files
+data/raw/
+data/processed/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python cache files
+__pycache__/
+
+# Configuration files
+config/*.yaml
