@@ -1,0 +1,6 @@
+raw_data:
+  sabi_data_path: "data/raw/SABI_Export/"
+
+processed_data:
+  companies_path: "data/processed/companies.csv"
+  balanced_path: "data/processed/balanced_companies.csv"
