@@ -1,8 +1,8 @@
 """
 Merge all the data exported from SABI, saved in a folder because they 
-are exported in several batch, into one unique file. This processes is
-conducted to simplify the handling of the data. Additionally, it gives
-the resulting file the correct format to the future work.
+are exported in several batches, into a single file. This process is
+conducted to simplify data handling. In adition, it gives
+the resulting file the correct format for future work.
 """
 import os
 import re
