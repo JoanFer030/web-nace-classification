@@ -1,6 +1,12 @@
-raw_data:
+data:
   sabi_data_path: "data/raw/SABI_Export/"
+  merged_path: "data/temp/merged_sabi.csv"
+  filtered_path: "data/temp/filtered_sabi.csv"
+  available_path: "data/processed/companies_web_available.csv"
 
-processed_data:
-  companies_path: "data/processed/companies.csv"
-  balanced_path: "data/processed/balanced_companies.csv"
+data_parameters:
+  separator: '";"'
+  column_names: ["", "name", "nif", "province", "url", "last_data_date", "employees", "", "cnae_primary", "cnae_secondary"]
+  column_types: ["str", "str", "str", "url", "date", "int", "list[int]", "list[int]"]
+  delete_words: [["name", ["extinguida", "en liquidación", "en liquidacion"]], ]
+  feature_creation: [["url", "url_availability"], ]
