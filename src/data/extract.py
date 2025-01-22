@@ -1,22 +1,17 @@
-"""
-Merge all the data exported from SABI, saved in a folder because they 
-are exported in several batches, into a single file. This process is
-conducted to simplify data handling. In adition, it gives
-the resulting file the correct format for future work.
-"""
 import os
-import re
-import csv
-import yaml
+from utils.csv import save_csv
 from tqdm import tqdm
 
-def load_sabi_file(path: str):
+def load_sabi_file(path: str, sep: str):
+    """
+    Loads the file and processes it to obtain the required format.
+    """
     with open(path, "r", encoding = "utf-16") as file:
         lines = file.read().splitlines()
-    memory = [format_line(lines[0])[1]]
+    memory = [format_line(lines[0], sep)[1]]
     data = []
     for line in lines[1:]:
-        new, processed_line = format_line(line)
+        new, processed_line = format_line(line, sep)
         if new:
             row = format_row(memory)
             data.append(row)
@@ -25,6 +20,9 @@ def load_sabi_file(path: str):
     return data
 
 def format_row(rows: list[list]) -> list:
+    """
+    Processes each batch of rows to obtain one single row.
+    """
     processed_row = [[] for _ in range(len(rows[0]))]
     for row in rows:
         for i, value in enumerate(row):
@@ -42,43 +40,41 @@ def format_row(rows: list[list]) -> list:
         final_row.append(value)
     return final_row
 
-def format_line(line: str, sep: str = ";") -> tuple[bool, list]:
+def format_line(line: str, sep: str) -> tuple[bool, list]:
+    """
+    Extracts data values from the received raw line.
+    """
     values = line.split(sep)
     processed_line = []
     for value in values:
-        temp = value[1:-1]
-        match = re.match(r"\d+", temp)
-        if match and match.span()[-1] == len(temp):
-            temp = int(temp)
+        temp = value.replace('"', "")
         processed_line.append(temp)
     if processed_line[0]:
         return True, processed_line
     return False, processed_line
 
-
-def save_data(data: list[list], save_path: str):
-    with open(save_path, "w", encoding = "utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerows(data)
-
-def load_data(folder_path: str) -> list[list]:
+def load_and_merge_data(folder_path: str, sep: str) -> list[list]:
+    """
+    Lists the directory and processes each file.
+    """
     files = os.listdir(folder_path)
     data = []
     for i, file in enumerate(tqdm(files, desc = "Processing files")):
         file_path = folder_path + file
-        file_data = load_sabi_file(file_path)
+        file_data = load_sabi_file(file_path, sep)
         if i > 0:
             file_data = file_data[1:]
         data.extend(file_data)
     return data
 
-def main(folder_path: str, save_path: str):
-    data = load_data(folder_path)
-    save_data(data, save_path)
-
-if __name__ == "__main__":
-    with open("config/parameters.yaml", "r") as file:
-        config = yaml.safe_load(file)
-    sabi_path = config["raw_data"]["sabi_data_path"]
-    companies_path = config["processed_data"]["companies_path"]
-    main(folder_path = sabi_path, save_path = companies_path)
+def extract_data(config: dict):
+    """
+    Extract Pipeline:
+    Merge all the data exported from SABI, stored in batches. 
+    """
+    sabi_path = config["data"]["sabi_data_path"]
+    merged_path = config["data"]["merged_path"]
+    separator = config["data_parameters"]["separator"]
+    data = load_and_merge_data(sabi_path, separator)
+    save_csv(data, merged_path, row_type = "list")
+    print(f"Saved {len(data)-1:,} companies from SABI")
