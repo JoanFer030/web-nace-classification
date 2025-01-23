@@ -59,7 +59,7 @@ def load_and_merge_data(folder_path: str, sep: str) -> list[list]:
     """
     files = os.listdir(folder_path)
     data = []
-    for i, file in enumerate(tqdm(files, desc = "Processing files")):
+    for i, file in enumerate(tqdm(files, desc = "Processing SABI files")):
         file_path = folder_path + file
         file_data = load_sabi_file(file_path, sep)
         if i > 0:

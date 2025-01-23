@@ -34,3 +34,4 @@ def create_feature(config: dict):
         func = functions[func_name]
         data = func(data, col_name)
     save_csv(data, available_path)
+    print(f"Saved {len(data):,} companies from SABI")

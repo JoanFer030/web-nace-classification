@@ -3,10 +3,12 @@ data:
   merged_path: "data/temp/merged_sabi.csv"
   filtered_path: "data/temp/filtered_sabi.csv"
   available_path: "data/processed/companies_web_available.csv"
+  cnae_raw_path: "data/raw/estructura_cnae2009.xls"
+  cnae_mapping: "data/processed/cnae_mapping.csv"
 
 data_parameters:
   separator: '";"'
   column_names: ["", "name", "nif", "province", "url", "last_data_date", "employees", "", "cnae_primary", "cnae_secondary"]
-  column_types: ["str", "str", "str", "url", "date", "int", "list[int]", "list[int]"]
+  column_types: ["str", "str", "str", "url", "date", "int", "list[str]", "list[stre]"]
   delete_words: [["name", ["extinguida", "en liquidación", "en liquidacion"]], ]
   feature_creation: [["url", "url_availability"], ]
