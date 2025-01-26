@@ -1,37 +1,61 @@
-import socket
+import os
+import sys
+import yaml
+import pandas as pd
 from tqdm import tqdm
+tqdm.pandas()
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.csv import open_csv, save_csv
 
-def create_availability_feature(data: list[dict], column_name: str, new_name: str = "url_availability") -> list[dict]:
-    """
-    Create a new feature, checks whether or not the web exists. 
-    This check is done making a request to a DNS.
-    """
-    def web_exits(url: str) -> bool:
-        try:
-            socket.gethostbyname(url)
-            return True
-        except:
-            return False
-    new_data = []
-    for row in tqdm(data, desc = "Web availability feature"):
-        n_row = row.copy()
-        n_row[new_name] = web_exits(n_row[column_name])
-        new_data.append(n_row)
-    return new_data
+import warnings
+warnings.simplefilter("ignore")
 
-def create_feature(config: dict):
+def filter_availability(data: pd.DataFrame, availability: pd.DataFrame) -> pd.DataFrame:
     """
-    Feature Creation Pipeline:
-    Creates the new feature, these are configured on the parameters file.
+    Filters the data by its availability.
     """
-    functions = {"url_availability": create_availability_feature}
+    availability["nif"] = availability["BVD_ID"].apply(lambda x: x[2:])
+    filtered = pd.merge(data, availability, on = "nif", how = "inner")
+    filtered = filtered[data.columns]
+    return filtered
+
+def fix_url(row):
+    """
+    Checks the existence of redirected url.
+    """
+    if str(row["redirect_url"]) == "nan":
+        row["redirect_url"] = row["sabi_url"]
+    return row
+
+def add_redirects(data: pd.DataFrame, redirects: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds the redirected url.
+    """
+    redirects.columns = ["", "id", "sabi_url", "redirect_url"]
+    data_redirected = pd.merge(data, redirects, on = "sabi_url", how = "left")
+    data_redirected = data_redirected[list(data.columns) + ["redirect_url"]]
+    data_redirected = data_redirected.progress_apply(fix_url, axis = 1)
+    data_redirected = data_redirected.drop_duplicates()
+    return data_redirected
+
+def feature_creation(config: dict):
+    """
+    Filters the data by its availability and adds the redirected url.
+    """
     filtered_path = config["data"]["filtered_path"]
-    available_path = config["data"]["available_path"]
-    feature_creation = config["data_parameters"]["feature_creation"]
+    availability_path = config["data"]["availability_path"]
+    redirects_path = config["data"]["redirects_path"]
+    companies_path = config["data"]["companies_path"]
     data = open_csv(filtered_path)
-    for col_name, func_name in feature_creation:
-        func = functions[func_name]
-        data = func(data, col_name)
-    save_csv(data, available_path)
-    print(f"Saved {len(data):,} companies from SABI")
+    print("Filtering companies by web availability")
+    availability = open_csv(availability_path)
+    data = filter_availability(data, availability)
+    print("Adding redirected url")
+    redirects = open_csv(redirects_path)
+    data = add_redirects(data, redirects)
+    save_csv(data, companies_path)
+
+if __name__ == "__main__":
+    with open("config/parameters.yaml", "r") as file:
+        config = yaml.safe_load(file)
+    feature_creation(config)

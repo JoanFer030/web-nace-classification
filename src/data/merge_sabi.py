@@ -1,6 +1,12 @@
 import os
-from utils.csv import save_csv
+import sys
+import yaml
 from tqdm import tqdm
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from utils.csv import save_csv
+
+import warnings
+warnings.simplefilter("ignore")
 
 def load_sabi_file(path: str, sep: str):
     """
@@ -32,7 +38,7 @@ def format_row(rows: list[list]) -> list:
     for values in processed_row:
         l = len(values)
         if l == 0:
-            value = float("nan")
+            value = ""
         elif l == 1:
             value = values[0]
         else:
@@ -53,28 +59,25 @@ def format_line(line: str, sep: str) -> tuple[bool, list]:
         return True, processed_line
     return False, processed_line
 
-def load_and_merge_data(folder_path: str, sep: str) -> list[list]:
+def merge_sabi(config: dict) -> list[list]:
     """
     Lists the directory and processes each file.
     """
+    folder_path = config["data"]["sabi_data_path"]
+    save_path = config["data"]["merged_path"]
+    separator = config["data_parameters"]["separator"]
     files = os.listdir(folder_path)
     data = []
     for i, file in enumerate(tqdm(files, desc = "Processing SABI files")):
         file_path = folder_path + file
-        file_data = load_sabi_file(file_path, sep)
+        file_data = load_sabi_file(file_path, separator)
         if i > 0:
             file_data = file_data[1:]
         data.extend(file_data)
+    save_csv(data, save_path, row_type = "list")
     return data
 
-def extract_data(config: dict):
-    """
-    Extract Pipeline:
-    Merge all the data exported from SABI, stored in batches. 
-    """
-    sabi_path = config["data"]["sabi_data_path"]
-    merged_path = config["data"]["merged_path"]
-    separator = config["data_parameters"]["separator"]
-    data = load_and_merge_data(sabi_path, separator)
-    save_csv(data, merged_path, row_type = "list")
-    print(f"Saved {len(data)-1:,} companies from SABI")
+if __name__ == "__main__":
+    with open("config/parameters.yaml", "r") as file:
+        config = yaml.safe_load(file)
+    merge_sabi(config)
